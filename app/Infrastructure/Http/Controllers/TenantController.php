@@ -17,6 +17,13 @@ class TenantController extends Controller
         private readonly TenantRepositoryInterface $tenantRepository
     ) {}
 
+    /**
+     * @OA\Get(
+     *     path="/api/tenants",
+     *     summary="List all tenants",
+     *     @OA\Response(response="200", description="Successful operation"),
+     * )
+     */
     public function index(): JsonResponse
     {
         $tenants = $this->tenantRepository->findAll();
@@ -27,6 +34,15 @@ class TenantController extends Controller
         ]);
     }
 
+    /**
+     * @OA\Get(
+     *     path="/api/tenants/{id}",
+     *     summary="Get a specific tenant",
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response="200", description="Successful operation"),
+     *     @OA\Response(response="404", description="Tenant not found"),
+     * )
+     */
     public function show(int $id): JsonResponse
     {
         $tenant = $this->tenantRepository->findById($id);
@@ -44,6 +60,24 @@ class TenantController extends Controller
         ]);
     }
 
+    /**
+     * @OA\Post(
+     *     path="/api/tenants",
+     *     summary="Create a new tenant",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name", "email", "domain", "plan_id"},
+     *             @OA\Property(property="name", type="string"),
+     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="domain", type="string"),
+     *             @OA\Property(property="plan_id", type="integer"),
+     *             @OA\Property(property="active", type="boolean"),
+     *         ),
+     *     ),
+     *     @OA\Response(response="201", description="Tenant created successfully"),
+     * )
+     */
     public function store(StoreTenantRequest $request): JsonResponse
     {
         try {
@@ -84,6 +118,26 @@ class TenantController extends Controller
         }
     }
 
+    /**
+     * @OA\Put(
+     *     path="/api/tenants/{id}",
+     *     summary="Update a tenant",
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name", "email", "domain", "plan_id"},
+     *             @OA\Property(property="name", type="string"),
+     *             @OA\Property(property="email", type="string", format="email"),
+     *             @OA\Property(property="domain", type="string"),
+     *             @OA\Property(property="plan_id", type="integer"),
+     *             @OA\Property(property="active", type="boolean"),
+     *         ),
+     *     ),
+     *     @OA\Response(response="200", description="Tenant updated successfully"),
+     *     @OA\Response(response="404", description="Tenant not found"),
+     * )
+     */
     public function update(UpdateTenantRequest $request, int $id): JsonResponse
     {
         try {
@@ -133,6 +187,15 @@ class TenantController extends Controller
         }
     }
 
+    /**
+     * @OA\Delete(
+     *     path="/api/tenants/{id}",
+     *     summary="Delete a tenant",
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+     *     @OA\Response(response="200", description="Tenant deleted successfully"),
+     *     @OA\Response(response="404", description="Tenant not found"),
+     * )
+     */
     public function destroy(int $id): JsonResponse
     {
         $tenant = $this->tenantRepository->findById($id);

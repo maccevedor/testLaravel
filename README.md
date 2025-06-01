@@ -1,3 +1,86 @@
+# Laravel DDD API
+
+This project is a Laravel-based RESTful API structured using Domain-Driven Design (DDD) principles. It manages tenants, plans, and clients, and provides clean separation between domain, application, and infrastructure layers.
+
+## Features
+- Domain-Driven Design (DDD) architecture
+- Repository pattern for data access
+- Form Request validation
+- Authorization policies
+- OpenAPI (Swagger) documentation
+
+## Project Structure
+- `app/Domain` — Domain entities, repositories, value objects
+- `app/Application` — Use cases, DTOs, application services
+- `app/Infrastructure` — HTTP controllers, resources, requests, persistence, providers
+- `config/ddd.php` — DDD-specific configuration
+- `config/openapi.php` — OpenAPI documentation config
+
+## API Documentation
+- OpenAPI annotations are used in controllers
+- Documentation is generated and served using [L5 Swagger](https://github.com/DarkaOnLine/L5-Swagger)
+- View the docs at: `http://localhost:8000/api/documentation`
+
+## Setup & Run
+
+1. **Clone the repository**
+   ```sh
+   git clone <your-repo-url>
+   cd <project-directory>
+   ```
+
+2. **Install dependencies**
+   ```sh
+   composer install
+   cp .env.example .env
+   php artisan key:generate
+   # Configure your .env (DB, etc.)
+   ```
+
+3. **Run migrations**
+   ```sh
+   php artisan migrate
+   ```
+
+4. **(Optional) Seed the database**
+   ```sh
+   php artisan db:seed
+   ```
+
+5. **Serve the application**
+   ```sh
+   php artisan serve
+   # App will be available at http://localhost:8000
+   ```
+
+6. **Generate API documentation**
+   ```sh
+   php artisan l5-swagger:generate
+   # View at http://localhost:8000/api/documentation
+   ```
+
+7. **Run tests**
+   ```sh
+   ./vendor/bin/pest
+   # or
+   php artisan test
+   ```
+
+## Notes
+- Controllers use Form Requests for validation and Policies for authorization.
+- API Resources are used for consistent JSON responses.
+- The DDD structure is enforced via service providers and configuration.
+- OpenAPI annotations are present in controllers for automatic API docs.
+
+## Useful Commands
+- `php artisan l5-swagger:generate` — Regenerate API docs
+- `php artisan migrate:fresh --seed` — Reset and seed DB
+- `php artisan test` or `./vendor/bin/pest` — Run tests
+
+---
+
+For more details, see the code and comments in each layer.
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
