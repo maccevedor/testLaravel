@@ -4,32 +4,45 @@ namespace App\Infrastructure\Http\Controllers;
 
 use App\Domain\Client\Entities\Client;
 use App\Domain\Client\Repositories\ClientRepositoryInterface;
+use App\Domain\Tenant\Repositories\TenantRepositoryInterface;
 use App\Infrastructure\Http\Resources\ClientResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
+use Illuminate\Validation\Rule;
 
 class ClientController extends Controller
 {
     private ClientRepositoryInterface $clientRepository;
+    private TenantRepositoryInterface $tenantRepository;
 
-    public function __construct(ClientRepositoryInterface $clientRepository)
-    {
+    public function __construct(
+        ClientRepositoryInterface $clientRepository,
+        TenantRepositoryInterface $tenantRepository
+    ) {
         $this->clientRepository = $clientRepository;
+        $this->tenantRepository = $tenantRepository;
     }
 
     public function index(Request $request): JsonResponse
     {
         $tenantId = $request->query('tenant_id');
 
-        if (!$tenantId) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tenant ID is required'
-            ], 400);
+        if ($tenantId) {
+            // Check if tenant exists
+            $tenant = $this->tenantRepository->findById($tenantId);
+            if (!$tenant) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tenant not found'
+                ], 404);
+            }
+
+            $clients = $this->clientRepository->findByTenantId($tenantId);
+        } else {
+            $clients = $this->clientRepository->findAll();
         }
 
-        $clients = $this->clientRepository->findByTenantId($tenantId);
         return response()->json([
             'success' => true,
             'count' => count($clients),
@@ -40,8 +53,20 @@ class ClientController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
+            // First check if tenant exists
+            $tenantId = $request->input('tenant_id');
+            if ($tenantId) {
+                $tenant = $this->tenantRepository->findById($tenantId);
+                if (!$tenant) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Tenant not found'
+                    ], 404);
+                }
+            }
+
             $validated = $request->validate([
-                'tenant_id' => 'required|integer|exists:tenants,id',
+                'tenant_id' => 'required|integer',
                 'name' => 'required|string|max:255',
                 'email' => 'required|email|max:255',
                 'phone' => 'required|string|max:20',

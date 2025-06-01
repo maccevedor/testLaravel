@@ -58,6 +58,30 @@ class ClientRepository implements ClientRepositoryInterface
         return $clients;
     }
 
+    public function findAll(): array
+    {
+        $clients = [];
+        $clientsData = DB::table('clients')->get();
+
+        foreach ($clientsData as $clientData) {
+            $client = new Client(
+                $clientData->tenant_id,
+                $clientData->name,
+                $clientData->email,
+                $clientData->phone,
+                $clientData->active
+            );
+
+            $this->setPrivateProperty($client, 'id', $clientData->id);
+            $this->setPrivateProperty($client, 'createdAt', new \DateTime($clientData->created_at));
+            $this->setPrivateProperty($client, 'updatedAt', new \DateTime($clientData->updated_at));
+
+            $clients[] = $client;
+        }
+
+        return $clients;
+    }
+
     public function save(Client $client): void
     {
         $id = DB::table('clients')->insertGetId([
