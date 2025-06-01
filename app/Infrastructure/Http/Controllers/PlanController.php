@@ -4,19 +4,17 @@ namespace App\Infrastructure\Http\Controllers;
 
 use App\Domain\Plan\Entities\Plan;
 use App\Domain\Plan\Repositories\PlanRepositoryInterface;
+use App\Infrastructure\Http\Requests\Plan\StorePlanRequest;
+use App\Infrastructure\Http\Requests\Plan\UpdatePlanRequest;
 use App\Infrastructure\Http\Resources\PlanResource;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Database\QueryException;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class PlanController extends Controller
 {
-    private PlanRepositoryInterface $planRepository;
-
-    public function __construct(PlanRepositoryInterface $planRepository)
-    {
-        $this->planRepository = $planRepository;
-    }
+    public function __construct(
+        private readonly PlanRepositoryInterface $planRepository
+    ) {}
 
     public function index(): JsonResponse
     {
@@ -26,38 +24,6 @@ class PlanController extends Controller
             'count' => count($plans),
             'data' => PlanResource::collection($plans)
         ]);
-    }
-
-    public function store(Request $request): JsonResponse
-    {
-        try {
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'description' => 'required|string',
-                'price' => 'required|numeric|min:0',
-                'active' => 'boolean'
-            ]);
-
-            $plan = new Plan(
-                $validated['name'],
-                $validated['description'],
-                $validated['price'],
-                $validated['active'] ?? true
-            );
-
-            $this->planRepository->save($plan);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Plan created successfully',
-                'data' => new PlanResource($plan)
-            ], 201);
-        } catch (QueryException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'An error occurred while creating the plan'
-            ], 500);
-        }
     }
 
     public function show(int $id): JsonResponse
@@ -77,45 +43,49 @@ class PlanController extends Controller
         ]);
     }
 
-    public function update(Request $request, int $id): JsonResponse
+    public function store(StorePlanRequest $request): JsonResponse
     {
-        try {
-            $plan = $this->planRepository->findById($id);
+        $plan = new Plan(
+            $request->validated('name'),
+            $request->validated('description'),
+            $request->validated('price'),
+            $request->validated('active', true)
+        );
 
-            if (!$plan) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Plan not found'
-                ], 404);
-            }
+        $this->planRepository->save($plan);
 
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'description' => 'required|string',
-                'price' => 'required|numeric|min:0',
-                'active' => 'boolean'
-            ]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Plan created successfully',
+            'data' => new PlanResource($plan)
+        ], 201);
+    }
 
-            $plan->update(
-                $validated['name'],
-                $validated['description'],
-                $validated['price'],
-                $validated['active'] ?? true
-            );
+    public function update(UpdatePlanRequest $request, int $id): JsonResponse
+    {
+        $plan = $this->planRepository->findById($id);
 
-            $this->planRepository->update($plan);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Plan updated successfully',
-                'data' => new PlanResource($plan)
-            ]);
-        } catch (QueryException $e) {
+        if (!$plan) {
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while updating the plan'
-            ], 500);
+                'message' => 'Plan not found'
+            ], 404);
         }
+
+        $plan->update(
+            $request->validated('name'),
+            $request->validated('description'),
+            $request->validated('price'),
+            $request->validated('active', true)
+        );
+
+        $this->planRepository->update($plan);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Plan updated successfully',
+            'data' => new PlanResource($plan)
+        ]);
     }
 
     public function destroy(int $id): JsonResponse

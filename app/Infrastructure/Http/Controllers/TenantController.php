@@ -4,19 +4,18 @@ namespace App\Infrastructure\Http\Controllers;
 
 use App\Domain\Tenant\Entities\Tenant;
 use App\Domain\Tenant\Repositories\TenantRepositoryInterface;
+use App\Infrastructure\Http\Requests\Tenant\StoreTenantRequest;
+use App\Infrastructure\Http\Requests\Tenant\UpdateTenantRequest;
 use App\Infrastructure\Http\Resources\TenantResource;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Database\QueryException;
 
 class TenantController extends Controller
 {
-    private TenantRepositoryInterface $tenantRepository;
-
-    public function __construct(TenantRepositoryInterface $tenantRepository)
-    {
-        $this->tenantRepository = $tenantRepository;
-    }
+    public function __construct(
+        private readonly TenantRepositoryInterface $tenantRepository
+    ) {}
 
     public function index(): JsonResponse
     {
@@ -28,21 +27,32 @@ class TenantController extends Controller
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function show(int $id): JsonResponse
+    {
+        $tenant = $this->tenantRepository->findById($id);
+
+        if (!$tenant) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tenant not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => new TenantResource($tenant)
+        ]);
+    }
+
+    public function store(StoreTenantRequest $request): JsonResponse
     {
         try {
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'email' => 'required|email|max:255',
-                'domain' => 'required|string|max:255',
-                'active' => 'boolean'
-            ]);
-
             $tenant = new Tenant(
-                $validated['name'],
-                $validated['email'],
-                $validated['domain'],
-                $validated['active'] ?? true
+                $request->validated('name'),
+                $request->validated('email'),
+                $request->validated('domain'),
+                $request->validated('plan_id'),
+                $request->validated('active', true)
             );
 
             $this->tenantRepository->save($tenant);
@@ -74,24 +84,7 @@ class TenantController extends Controller
         }
     }
 
-    public function show(int $id): JsonResponse
-    {
-        $tenant = $this->tenantRepository->findById($id);
-
-        if (!$tenant) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tenant not found'
-            ], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => new TenantResource($tenant)
-        ]);
-    }
-
-    public function update(Request $request, int $id): JsonResponse
+    public function update(UpdateTenantRequest $request, int $id): JsonResponse
     {
         try {
             $tenant = $this->tenantRepository->findById($id);
@@ -103,18 +96,12 @@ class TenantController extends Controller
                 ], 404);
             }
 
-            $validated = $request->validate([
-                'name' => 'required|string|max:255',
-                'email' => 'required|email|max:255',
-                'domain' => 'required|string|max:255',
-                'active' => 'boolean'
-            ]);
-
             $tenant->update(
-                $validated['name'],
-                $validated['email'],
-                $validated['domain'],
-                $validated['active'] ?? true
+                $request->validated('name'),
+                $request->validated('email'),
+                $request->validated('domain'),
+                $request->validated('plan_id'),
+                $request->validated('active', true)
             );
 
             $this->tenantRepository->update($tenant);
@@ -162,6 +149,6 @@ class TenantController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Tenant deleted successfully'
-        ], 200);
+        ]);
     }
 }

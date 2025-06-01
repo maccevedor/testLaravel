@@ -135,6 +135,13 @@ return [
          */
         App\Providers\AppServiceProvider::class,
         App\Providers\RepositoryServiceProvider::class,
+
+        /*
+         * Domain-Driven Design Service Providers...
+         */
+        App\Infrastructure\Providers\DomainServiceProvider::class,
+        App\Infrastructure\Providers\ApplicationServiceProvider::class,
+        App\Infrastructure\Providers\InfrastructureServiceProvider::class,
     ])->toArray(),
 
 ];
